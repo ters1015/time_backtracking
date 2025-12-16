@@ -558,33 +558,33 @@ def download_model_from_hf(url, dest_path):
 def load_clip_config():
     try:
         config = parse_config(CONFIG_PATH)
-        # 1. 定义本地路径
+        
+        # 1. 定义云端路径
         local_ckpt = os.path.join(MODELS_DIR, "checkpoint_best.pth")
-
-        # 2. 您的下载链接
+        
+        # 2. 定义下载链接
         HF_URL = "https://huggingface.co/ters1015/time-backtracking-models/resolve/main/checkpoint_best.pth?download=true"
-
-        # 3. 检查与下载
+        
+        # 3. 如果文件不存在，尝试下载
         if not os.path.exists(local_ckpt):
-            success = download_model_from_hf(HF_URL, local_ckpt)
-            if not success:
-                st.warning("⚠️ 无法下载微调模型，将使用官方 CLIP 模型作为备用。")
-                local_ckpt = ""  # 回退到空，触发后续逻辑
-
-        # 4. 应用配置
-        if local_ckpt and os.path.exists(local_ckpt):
+            download_model_from_hf(HF_URL, local_ckpt)
+            
+        # 4. [关键修改] 强制覆盖路径！(不要放在 if 里面)
+        # 无论有没有下载成功，先尝试把配置改成云端路径
+        if os.path.exists(local_ckpt):
             config.model.checkpoint = local_ckpt
+            # st.toast("✅ 使用微调模型")
         else:
-            # 如果没有微调模型，强制使用官方模型
+            # 如果真的下载失败了，才回退到官方模型
+            st.warning("⚠️ 无法加载微调模型，切换回官方 CLIP。")
             config.model.checkpoint = ""
             config.model.ckpt_type = "original_clip"
-        # =================================
 
+        # 5. 其他配置修正
         config.image_dir = EXTRACTED_FRAMES_DIR
-
-        # 云端环境通常无GPU，使用CPU
         config.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+        # 6. 加载模型
         model = clip_vitb(config)
         model, _ = load_checkpoint(model, config)
         model = model.to(config.device)
@@ -779,3 +779,4 @@ elif s_type == "图像检索":
             if traj_data: draw_trajectory_on_map(traj_data, MAP_IMAGE_PATH)
 
             generate_and_display_all_cropped_videos(display_res, "image", target_name=os.path.splitext(sel_img)[0])
+
