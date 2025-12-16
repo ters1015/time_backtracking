@@ -14,5 +14,5 @@ yacs
 matplotlib
 easydict
 nltk
-elasticsearc
+elasticsearch
 git+https://github.com/openai/CLIP.git
