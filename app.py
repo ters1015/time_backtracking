@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 # === 🕵️‍♂️ 侦探代码：看看云端到底有什么文件 ===
 st.write("📂 当前工作目录:", os.getcwd())
 st.write("📂 目录下的文件:", os.listdir("."))
@@ -12,7 +13,6 @@ import subprocess
 import torch
 import json
 import re
-import os
 import requests
 import hashlib
 import cv2
