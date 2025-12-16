@@ -559,34 +559,46 @@ def load_clip_config():
     try:
         config = parse_config(CONFIG_PATH)
         
-        # 2. 定义云端新路径
+        # 2. 定义云端路径 & 下载链接
         local_ckpt = os.path.join(MODELS_DIR, "checkpoint_best.pth")
         HF_URL = "https://huggingface.co/ters1015/time-backtracking-models/resolve/main/checkpoint_best.pth?download=true"
         
-        # 3. 如果本地没有模型，先去下载
+        # 3. 下载逻辑
         if not os.path.exists(local_ckpt):
-            # 确保 download_model_from_hf 函数已在上方定义
             download_model_from_hf(HF_URL, local_ckpt)
             
-        # ================= [关键步骤] 强制修改路径 =================
-        # 这一步必须在 load_checkpoint 之前执行！
+        # ================= [核心修复] 全面覆盖旧路径 =================
         if os.path.exists(local_ckpt):
-            st.write(f"✅ 成功定位模型文件: {local_ckpt}")
-            config.model.checkpoint = local_ckpt  # <--- 这里覆盖旧路径
+            st.write(f"✅ 模型就绪: {local_ckpt}")
+            
+            # 1. 覆盖 checkpoint (我们之前做过)
+            config.model.checkpoint = local_ckpt
+            
+            # 2. 覆盖 resume (这是报错的元凶！！！)
+            # 如果 yaml 里写了 resume: '/home/...', 代码会优先读它
+            if 'resume' in config.model:
+                config.model.resume = local_ckpt
+            
+            # 3. 覆盖 pretrain (以防万一)
+            if 'pretrain' in config.model:
+                config.model.pretrain = local_ckpt
+                
         else:
-            st.warning(f"⚠️ 未找到微调模型，将回退到官方 CLIP。")
-            config.model.checkpoint = ""          # <--- 这里防止报错
+            st.warning("⚠️ 使用官方 CLIP 模型 (微调模型未找到)")
+            config.model.checkpoint = ""
             config.model.ckpt_type = "original_clip"
-        # =========================================================
+            # 确保清空 resume，防止它去读不存在的旧路径
+            if 'resume' in config.model: config.model.resume = ""
+        # ==========================================================
 
-        # 4. 其他配置修正
+        # 4. 其他配置
         config.image_dir = EXTRACTED_FRAMES_DIR
         config.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-        # 5. 加载模型 (此时 config.model.checkpoint 已经是新路径了)
-        st.write(f"🔄 正在加载模型... (Checkpoint: {config.model.checkpoint})")
+        # 5. 加载模型
+        st.write("🔄 开始载入模型权重...")
         model = clip_vitb(config)
-        model, _ = load_checkpoint(model, config) # <--- 这一步如果报错，说明上面没覆盖成功
+        model, _ = load_checkpoint(model, config)
         model = model.to(config.device)
         model.eval()
 
@@ -779,5 +791,6 @@ elif s_type == "图像检索":
             if traj_data: draw_trajectory_on_map(traj_data, MAP_IMAGE_PATH)
 
             generate_and_display_all_cropped_videos(display_res, "image", target_name=os.path.splitext(sel_img)[0])
+
 
 
