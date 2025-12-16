@@ -15,6 +15,7 @@ from ultralytics import YOLO
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 import nltk
+
 # ================= 1. NLTK 数据下载 (必须在导入项目模块之前！) =================
 st.write("📦 正在检查 NLTK 数据...")
 try:
@@ -22,7 +23,7 @@ try:
     nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
     if nltk_data_path not in nltk.data.path:
         nltk.data.path.append(nltk_data_path)
-    
+
     # 尝试查找数据
     nltk.data.find('corpora/stopwords')
     nltk.data.find('corpora/wordnet')
@@ -520,11 +521,65 @@ def generate_and_display_all_cropped_videos(results, r_type, query_slug="", targ
 
 
 # ================= 6. 模型与数据加载 (路径动态修正) =================
+# === [修改 2] 新增模型下载函数 ===
+def download_model_from_hf(url, dest_path):
+    if os.path.exists(dest_path):
+        return True
+
+    st.info(f"⬇️ 正在从云端下载微调模型 (1.67GB)... 请耐心等待。")
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        total_size = int(response.headers.get('content-length', 0))
+        block_size = 1024 * 1024  # 1MB
+
+        progress_bar = st.progress(0, text="下载进度: 0%")
+        downloaded = 0
+
+        with open(dest_path, "wb") as f:
+            for data in response.iter_content(block_size):
+                f.write(data)
+                downloaded += len(data)
+                if total_size > 0:
+                    percent = min(downloaded / total_size, 1.0)
+                    progress_bar.progress(percent, text=f"下载进度: {int(percent * 100)}%")
+
+        progress_bar.empty()
+        st.success("✅ 模型下载完成！")
+        return True
+    except Exception as e:
+        st.error(f"❌ 模型下载失败: {e}")
+        if os.path.exists(dest_path):
+            os.remove(dest_path)  # 删除损坏文件
+        return False
 @st.cache_resource
 def load_clip_config():
     try:
         config = parse_config(CONFIG_PATH)
-        # 强制将配置中的路径指向云端实际存在的文件夹
+        # 1. 定义本地路径
+        local_ckpt = os.path.join(MODELS_DIR, "checkpoint_best.pth")
+
+        # 2. 您的下载链接
+        HF_URL = "https://huggingface.co/ters1015/time-backtracking-models/resolve/main/checkpoint_best.pth?download=true"
+
+        # 3. 检查与下载
+        if not os.path.exists(local_ckpt):
+            success = download_model_from_hf(HF_URL, local_ckpt)
+            if not success:
+                st.warning("⚠️ 无法下载微调模型，将使用官方 CLIP 模型作为备用。")
+                local_ckpt = ""  # 回退到空，触发后续逻辑
+
+        # 4. 应用配置
+        if local_ckpt and os.path.exists(local_ckpt):
+            config.model.checkpoint = local_ckpt
+        else:
+            # 如果没有微调模型，强制使用官方模型
+            config.model.checkpoint = ""
+            config.model.ckpt_type = "original_clip"
+        # =================================
+
         config.image_dir = EXTRACTED_FRAMES_DIR
 
         # 云端环境通常无GPU，使用CPU
@@ -722,6 +777,5 @@ elif s_type == "图像检索":
 
             st.markdown("### 📍 行人轨迹追踪")
             if traj_data: draw_trajectory_on_map(traj_data, MAP_IMAGE_PATH)
-
 
             generate_and_display_all_cropped_videos(display_res, "image", target_name=os.path.splitext(sel_img)[0])
