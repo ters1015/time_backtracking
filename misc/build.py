@@ -36,19 +36,23 @@ def interpolate_text(pos_embed_checkpoint, target_dim=77):
 
 
 def load_checkpoint(model, config):
-    # ================= [修改开始] 智能路径选择 =================
-    # 1. 优先使用我们在 app.py 中设置好的 config.model.checkpoint
-    if hasattr(config.model, 'checkpoint') and config.model.checkpoint and os.path.exists(config.model.checkpoint):
-        real_path = config.model.checkpoint
-    # 2. 如果没有，再回退到原来的拼接逻辑
-    else:
-        real_path = os.path.join(config.model.saved_path, 'checkpoint_best.pth')
+    # ================= [关键修复] 优先使用 app.py 传入的正确路径 =================
+    real_path = None
     
-    print(f"🔄 Loading checkpoint from: {real_path}") # 打印日志方便调试
-    # ==========================================================
+    # 1. 优先检查 config.model.checkpoint 是否存在且有效 (我们在 app.py 里改的就是这个)
+    if hasattr(config.model, 'checkpoint') and config.model.checkpoint:
+        if os.path.exists(config.model.checkpoint):
+            real_path = config.model.checkpoint
+            print(f"🔄 [Build.py] 使用动态修正路径: {real_path}")
+            
+    # 2. 如果上面没找到，再回退到旧的拼接逻辑 (防止其他情况报错)
+    if real_path is None:
+        print(f"⚠️ [Build.py] 未找到修正路径，回退到默认 saved_path 拼接")
+        real_path = os.path.join(config.model.saved_path, 'checkpoint_best.pth')
+    # ========================================================================
 
     if config.model.ckpt_type == 'original_clip':
-        # 使用 real_path 替代 config.model.checkpoint
+        # 使用 real_path
         with open(real_path, 'rb') as opened_file:
             model_tmp = torch.jit.load(opened_file, map_location="cpu")
             state = model_tmp.state_dict()
@@ -71,14 +75,17 @@ def load_checkpoint(model, config):
                 new_state[name] = params
                 
     elif config.model.ckpt_type == 'saved':
-        # [修改] 直接加载计算好的 real_path
-        ckpt = torch.load(real_path, map_location='cpu') # 移除了 weights_only=False 以兼容旧版本torch
-        new_state = ckpt['model']
+        # [修改] 直接加载我们计算好的 real_path
+        print(f"🔄 Loading checkpoint from: {real_path}")
+        try:
+            # 移除 weights_only=False 以兼容旧版 torch，或者保留它如果您的环境较新
+            ckpt = torch.load(real_path, map_location='cpu') 
+            new_state = ckpt['model']
+        except FileNotFoundError:
+            # 再次捕获错误，给出更明确的提示
+            raise FileNotFoundError(f"❌ 无法找到模型文件: {real_path}。请检查 app.py 中的下载逻辑是否执行成功。")
     else:
         raise KeyError
-
-    load_result = model.load_state_dict(new_state, strict=False)
-    return model, load_result
 
     load_result = model.load_state_dict(new_state, strict=False)
     return model, load_result
@@ -144,4 +151,5 @@ def build_optimizer(config, model):
     optimizer = torch.optim.AdamW(params, lr=schedule_config.lr, betas=schedule_config.betas,
                                   eps=schedule_config.eps, weight_decay=schedule_config.weight_decay)
     return optimizer
+
 
