@@ -36,8 +36,20 @@ def interpolate_text(pos_embed_checkpoint, target_dim=77):
 
 
 def load_checkpoint(model, config):
+    # ================= [修改开始] 智能路径选择 =================
+    # 1. 优先使用我们在 app.py 中设置好的 config.model.checkpoint
+    if hasattr(config.model, 'checkpoint') and config.model.checkpoint and os.path.exists(config.model.checkpoint):
+        real_path = config.model.checkpoint
+    # 2. 如果没有，再回退到原来的拼接逻辑
+    else:
+        real_path = os.path.join(config.model.saved_path, 'checkpoint_best.pth')
+    
+    print(f"🔄 Loading checkpoint from: {real_path}") # 打印日志方便调试
+    # ==========================================================
+
     if config.model.ckpt_type == 'original_clip':
-        with open(config.model.checkpoint, 'rb') as opened_file:
+        # 使用 real_path 替代 config.model.checkpoint
+        with open(real_path, 'rb') as opened_file:
             model_tmp = torch.jit.load(opened_file, map_location="cpu")
             state = model_tmp.state_dict()
         for key in ["input_resolution", "context_length", "vocab_size"]:
@@ -57,11 +69,16 @@ def load_checkpoint(model, config):
                 new_state['encode_text.' + name] = params
             else:
                 new_state[name] = params
+                
     elif config.model.ckpt_type == 'saved':
-        ckpt = torch.load(os.path.join(config.model.saved_path, 'checkpoint_best.pth'), map_location='cpu',weights_only=False)
+        # [修改] 直接加载计算好的 real_path
+        ckpt = torch.load(real_path, map_location='cpu') # 移除了 weights_only=False 以兼容旧版本torch
         new_state = ckpt['model']
     else:
         raise KeyError
+
+    load_result = model.load_state_dict(new_state, strict=False)
+    return model, load_result
 
     load_result = model.load_state_dict(new_state, strict=False)
     return model, load_result
@@ -127,3 +144,4 @@ def build_optimizer(config, model):
     optimizer = torch.optim.AdamW(params, lr=schedule_config.lr, betas=schedule_config.betas,
                                   eps=schedule_config.eps, weight_decay=schedule_config.weight_decay)
     return optimizer
+
