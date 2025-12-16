@@ -8,14 +8,30 @@ import requests
 import hashlib
 import cv2
 import numpy as np
+import nltk
 import tempfile
 from PIL import Image
 from torchvision import transforms
 from ultralytics import YOLO
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
+import nltk
+st.write("📦 正在检查 NLTK 数据...")
+try:
+    # 尝试加载，如果报错说明没下载
+    nltk.data.find('corpora/wordnet.zip')
+    nltk.data.find('corpora/stopwords.zip')
+    st.write("✅ NLTK 数据已就绪")
+except LookupError:
+    st.write("⬇️ 正在下载 NLTK 数据 (首次运行需要，请耐心等待)...")
+    nltk.download('wordnet')
+    nltk.download('stopwords')
+    nltk.download('omw-1.4')
+    st.write("✅ 下载完成！")
+# ===================================================================
 
-st.write("🔄 正在尝试导入自定义模块...")
+# ================= 2. 导入项目模块 (必须在 NLTK 下载之后！) =================
+st.write("🔄 正在导入项目模块...")
 
 from text_utils.tokenizer import tokenize
 st.write("✅ text_utils 导入成功")

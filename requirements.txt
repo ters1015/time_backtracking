@@ -13,4 +13,5 @@ tqdm
 yacs
 matplotlib
 easydict
+nltk
 git+https://github.com/openai/CLIP.git
