@@ -8,13 +8,32 @@ import requests
 import hashlib
 import cv2
 import numpy as np
-import nltk
 import tempfile
 from PIL import Image
 from torchvision import transforms
 from ultralytics import YOLO
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
+import nltk
+# ================= 1. NLTK 数据下载 (必须在导入项目模块之前！) =================
+st.write("📦 正在检查 NLTK 数据...")
+try:
+    # 设置 NLTK 数据路径到当前环境的目录下，防止权限问题
+    nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
+    if nltk_data_path not in nltk.data.path:
+        nltk.data.path.append(nltk_data_path)
+    
+    # 尝试查找数据
+    nltk.data.find('corpora/stopwords')
+    nltk.data.find('corpora/wordnet')
+    st.write("✅ NLTK 数据已就绪")
+except LookupError:
+    st.write("⬇️ 正在下载 NLTK 数据 (这可能需要一分钟)...")
+    # 强制下载到指定目录
+    nltk.download('stopwords', download_dir=nltk_data_path)
+    nltk.download('wordnet', download_dir=nltk_data_path)
+    nltk.download('omw-1.4', download_dir=nltk_data_path)
+    st.write("✅ 下载完成！")
 st.write("🔄 正在导入项目模块...")
 
 from text_utils.tokenizer import tokenize
@@ -703,5 +722,6 @@ elif s_type == "图像检索":
 
             st.markdown("### 📍 行人轨迹追踪")
             if traj_data: draw_trajectory_on_map(traj_data, MAP_IMAGE_PATH)
+
 
             generate_and_display_all_cropped_videos(display_res, "image", target_name=os.path.splitext(sel_img)[0])
