@@ -1,4 +1,13 @@
 import streamlit as st
+# === 🕵️‍♂️ 侦探代码：看看云端到底有什么文件 ===
+st.write("📂 当前工作目录:", os.getcwd())
+st.write("📂 目录下的文件:", os.listdir("."))
+# 检查 text_utils 是否真的存在
+if os.path.exists("text_utils"):
+    st.success("✅ text_utils 文件夹存在！")
+else:
+    st.error("❌ text_utils 文件夹不存在！请检查它是否被套在其他文件夹里了？")
+# ==========================================
 import subprocess
 import torch
 import json
