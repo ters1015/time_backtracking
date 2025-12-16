@@ -1,14 +1,5 @@
 import streamlit as st
 import os
-# === 🕵️‍♂️ 侦探代码：看看云端到底有什么文件 ===
-st.write("📂 当前工作目录:", os.getcwd())
-st.write("📂 目录下的文件:", os.listdir("."))
-# 检查 text_utils 是否真的存在
-if os.path.exists("text_utils"):
-    st.success("✅ text_utils 文件夹存在！")
-else:
-    st.error("❌ text_utils 文件夹不存在！请检查它是否被套在其他文件夹里了？")
-# ==========================================
 import subprocess
 import torch
 import json
@@ -24,18 +15,26 @@ from ultralytics import YOLO
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 
-# 尝试导入项目模块
-try:
-    from text_utils.tokenizer import tokenize
-    from misc.build import load_checkpoint
-    from misc.utils import parse_config
-    from model.tbps_model import clip_vitb
-    from run.people.ext_feature_people_new import extract_feature_people
-    from utils.search_utils import search
-    from track_retrieval.frame_divide import trans_seconds_to_time, cut_video
-except ImportError:
-    st.error("❌ 模块导入失败。请确保 text_utils, misc, model, run, utils, track_retrieval 文件夹都在项目根目录下。")
-    st.stop()
+st.write("🔄 正在尝试导入自定义模块...")
+
+from text_utils.tokenizer import tokenize
+st.write("✅ text_utils 导入成功")
+
+from misc.build import load_checkpoint
+from misc.utils import parse_config
+st.write("✅ misc 导入成功")
+
+from model.tbps_model import clip_vitb
+st.write("✅ model 导入成功")
+
+from run.people.ext_feature_people_new import extract_feature_people
+st.write("✅ run.people 导入成功")
+
+from utils.search_utils import search
+st.write("✅ utils 导入成功")
+
+from track_retrieval.frame_divide import trans_seconds_to_time, cut_video
+st.write("✅ track_retrieval 导入成功")
 
 # ================= 1. 路径与环境配置 (云端适配核心) =================
 
