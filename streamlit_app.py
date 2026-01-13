@@ -29,12 +29,14 @@ st.markdown("""
 
 # 2. 头部 UI
 st.title("🔍时光回溯系统-基于文本和图像的视频检索演示系统")
-st.header("💡平台功能概述")
+st.header("💡 平台功能概述")
 st.markdown(
     """
-    <div style="background-color: #e6f7ff; border-left: 4px solid #1890ff; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-size: 1.1rem; line-height: 1.6;">
-        <strong>本系统是一个支持跨模态检索的视频帧检索演示平台。</strong><br>
-        支持以<strong>自然语言描述</strong>或<strong>目标图像</strong>作为检索条件，系统能自动生成并播放对应时间范围的<strong>视频片段</strong>及<strong>行动轨迹</strong>。
+    <div style="background-color: #e6f7ff; border-left: 4px solid #1890ff; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-size: 1.5rem; line-height: 1.6;">
+        <strong>本系统是一个支持跨模态检索的视频帧检索演示平台。</strong><br><br>
+        • <strong>智能检索：</strong> 依托先进的跨模态表示学习技术，系统可在<strong>多视角监控视频</strong>中快速、准确地定位与输入内容最相关的场景与目标。<br>
+        • <strong>多样输入：</strong> 支持以<strong>自然语言描述</strong>或<strong>目标图像</strong>作为检索条件，实现语义与视觉的深度融合，让检索更加直观灵活。<br>
+        • <strong>丰富输出：</strong> 除了展示最相关的视频帧、出现时间及匹配置信度外，系统还能自动生成并播放对应时间范围的<strong>视频片段</strong>、在楼层中的<strong>行动轨迹</strong>，便于快速回溯与验证。
     </div>
     """,
     unsafe_allow_html=True
@@ -84,6 +86,14 @@ data_text_search = [
     {"图像文件": "1_10_6_0.jpg", "时间点": "0:10", "置信度": 0.347, "距离 (Dist)": "2.16 m"},
 ]
 
+st.subheader("📹 原始监控视频流 (Source Video)")
+if os.path.exists(RAW_VIDEO_PATH):
+    st.video(RAW_VIDEO_PATH)
+    st.caption("原始输入视频流")
+else:
+    st.error(f"原始视频文件未找到，请确认已上传: {RAW_VIDEO_PATH}")
+
+st.markdown("---")
 # ==========================================
 # 4. 核心逻辑控制
 # ==========================================
@@ -108,7 +118,7 @@ with col_btn2:
 # ==========================================
 
 if st.session_state['mode'] == 'img':
-    st.markdown("### 🔹 图像检索模式 (Image Re-ID)")
+    st.markdown("### 🔹 图像检索")
 
     # 模拟加载
     with st.spinner():
@@ -153,7 +163,7 @@ if st.session_state['mode'] == 'img':
 
 
 elif st.session_state['mode'] == 'text':
-    st.markdown("### 🔹 文本检索模式 (Text Search)")
+    st.markdown("### 🔹 文本检索")
 
     # 显示输入的描述文本
     st.info("📝 **输入描述**：一个戴眼镜的年轻男子，身穿白色上衣和黑色长裤")
