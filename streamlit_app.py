@@ -89,7 +89,6 @@ data_text_search = [
 st.subheader("📹 原始监控视频流 (Source Video)")
 if os.path.exists(RAW_VIDEO_PATH):
     st.video(RAW_VIDEO_PATH)
-    st.caption("原始输入视频流")
 else:
     st.error(f"原始视频文件未找到，请确认已上传: {RAW_VIDEO_PATH}")
 
