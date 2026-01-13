@@ -86,7 +86,7 @@ data_text_search = [
     {"图像文件": "1_10_6_0.jpg", "时间点": "0:10", "置信度": 0.347, "距离 (Dist)": "2.16 m"},
 ]
 
-st.subheader("📹 原始监控视频流 (Source Video)")
+st.subheader("📹 监控视频")
 if os.path.exists(RAW_VIDEO_PATH):
     st.video(RAW_VIDEO_PATH)
 else:
