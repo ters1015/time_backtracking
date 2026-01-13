@@ -48,7 +48,7 @@ st.markdown("---")
 # 3. 资源配置 & 数据准备
 # ==========================================
 IMAGE_DIR = "images"
-
+RAW_VIDEO_PATH = os.path.join(IMAGE_DIR, "1.mp4")
 # --- 资源路径 ---
 IMG_QUERY_PIC = os.path.join(IMAGE_DIR, "target9.jpg")  # 图像检索-输入图
 IMG_TRAJ_PIC = os.path.join(IMAGE_DIR, "demo_traj_img.png")  # 图像检索-轨迹
